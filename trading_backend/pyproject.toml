@@ -5,7 +5,7 @@ description = "Real-time cryptocurrency trading monitoring and prediction system
 authors = ["Devin <devin@example.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.9,<3.13"
 fastapi = "0.104.1"
 uvicorn = "^0.27.0"
 python-dotenv = "^1.0.0"
@@ -28,6 +28,9 @@ google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.1"
 tweepy = "^4.14.0"
 python-twitter-v2 = "^0.9.2"
+spacy = "^3.8.3"
+transformers = "^4.47.0"
+torch = "^2.5.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
@@ -43,3 +46,4 @@ build-backend = "poetry.core.masonry.api"
 pythonpath = ["."]
 asyncio_mode = "strict"
 testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "function"
