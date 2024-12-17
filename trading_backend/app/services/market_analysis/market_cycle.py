@@ -333,7 +333,8 @@ class MarketCycleAnalyzer:
                     "source_breakdown": {
                         "twitter": 0.91,
                         "youtube": 0.88
-                    }
+                    },
+                    "trend": "bullish"  # Add trend information
                 }
 
             # Aggregate signals by source
@@ -382,7 +383,8 @@ class MarketCycleAnalyzer:
                 "confidence": confidence,
                 "accuracy": sum(source_accuracy.values()) / len(source_accuracy) if source_accuracy else 0.85,
                 "signals_analyzed": len(signals),
-                "source_breakdown": source_accuracy
+                "source_breakdown": source_accuracy,
+                "trend": market_sentiment  # Add trend information based on market sentiment
             }
 
             return result
