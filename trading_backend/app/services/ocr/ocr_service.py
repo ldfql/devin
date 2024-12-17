@@ -114,7 +114,8 @@ class OCRService:
                 'text': text,
                 'language': self.supported_languages[lang],
                 'signals': signals,
-                'confidence_explanation': self.signal_extractor.get_confidence_explanation(signals)
+                'confidence': signals.get('confidence', 0.0) if signals else 0.0,
+                'sentiment': signals.get('sentiment', 'neutral') if signals else 'neutral'
             }
 
         except Exception as e:
@@ -123,5 +124,39 @@ class OCRService:
                 'text': "",
                 'language': "Unknown",
                 'signals': None,
-                'confidence_explanation': "Error processing image"
+                'confidence': 0.0,
+                'sentiment': 'neutral'
+            }
+
+    async def extract_text_from_string(self, text: str) -> Dict:
+        """Extract trading signals from text string."""
+        try:
+            # Detect language based on text content
+            if any('\u4e00' <= char <= '\u9fff' for char in text):
+                lang = 'chi_sim'
+            else:
+                lang = 'eng'
+
+            # Extract trading signals
+            signals = self.signal_extractor.extract_signals(
+                text,
+                'en' if lang == 'eng' else 'cn'
+            )
+
+            return {
+                'text': text,
+                'language': self.supported_languages[lang],
+                'signals': signals,
+                'confidence': signals.get('confidence', 0.0) if signals else 0.0,
+                'sentiment': signals.get('sentiment', 'neutral') if signals else 'neutral'
+            }
+
+        except Exception as e:
+            logger.error(f"Error processing text: {str(e)}")
+            return {
+                'text': text,
+                'language': "Unknown",
+                'signals': None,
+                'confidence': 0.0,
+                'sentiment': 'neutral'
             }

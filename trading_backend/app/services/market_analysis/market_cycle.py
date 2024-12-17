@@ -9,18 +9,27 @@ from .exceptions import MarketAnalysisError, InvalidMarketDataError, AnalysisPre
 import joblib
 
 class MarketCycleAnalyzer:
-    def __init__(self, api_key: str, api_secret: str):
-        """Initialize the market cycle analyzer with API credentials."""
-        try:
-            self.client = Client(api_key, api_secret)
-            self.client.ping()  # Test connection
-        except Exception as e:
-            if "Service unavailable from a restricted location" in str(e):
-                # Use testnet for development/testing when location restricted
-                self.client = Client(api_key, api_secret, testnet=True)
-                self.client.ping()  # Verify testnet connection
-            else:
-                raise MarketAnalysisError(f"Failed to initialize Binance client: {str(e)}")
+    def __init__(self, api_key: Optional[str] = None, api_secret: Optional[str] = None):
+        """Initialize the market cycle analyzer with optional API credentials."""
+        self.cycle_phases = ['accumulation', 'markup', 'distribution', 'markdown']
+        self.current_phase = None
+        self.confidence = 0.0
+        self.last_update = None
+
+        if api_key and api_secret:
+            try:
+                self.client = Client(api_key, api_secret)
+                self.client.ping()  # Test connection
+            except Exception as e:
+                if "Service unavailable from a restricted location" in str(e):
+                    # Use testnet for development/testing when location restricted
+                    self.client = Client(api_key, api_secret, testnet=True)
+                    self.client.ping()  # Verify testnet connection
+                else:
+                    raise MarketAnalysisError(f"Failed to initialize Binance client: {str(e)}")
+        else:
+            self.client = None  # For testing without API access
+
         self._initialize_model()
 
     def _initialize_model(self):

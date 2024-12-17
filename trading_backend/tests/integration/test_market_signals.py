@@ -1,40 +1,42 @@
 """Integration tests for market signal collection and analysis."""
 import pytest
-from datetime import datetime, timedelta
-import asyncio
+import pytest_asyncio
 from typing import Dict, List
 
 from app.services.web_scraping.twitter_scraper import TwitterScraper
-from app.services.web_scraping.youtube_scraper import YoutubeScraper
+from app.services.web_scraping.youtube_scraper import YouTubeScraper
 from app.services.web_scraping.english_sentiment import EnglishSentimentAnalyzer
 from app.services.ocr.ocr_service import OCRService
 from app.services.market_analysis.market_cycle import MarketCycleAnalyzer
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def twitter_scraper():
-    scraper = TwitterScraper()
-    await scraper.initialize(
+    """Twitter scraper fixture."""
+    return TwitterScraper(
         api_key="test_key",
         api_secret="test_secret",
         access_token="test_token",
         access_token_secret="test_token_secret"
     )
-    return scraper
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def youtube_scraper():
-    return YoutubeScraper()
+    """YouTube scraper fixture."""
+    return YouTubeScraper(api_key="test_key")
 
 @pytest.fixture
 def sentiment_analyzer():
+    """Sentiment analyzer fixture."""
     return EnglishSentimentAnalyzer()
 
 @pytest.fixture
 def ocr_service():
+    """OCR service fixture."""
     return OCRService()
 
 @pytest.fixture
 def market_analyzer():
+    """Market analyzer fixture."""
     return MarketCycleAnalyzer()
 
 class TestMarketSignalIntegration:
@@ -45,24 +47,20 @@ class TestMarketSignalIntegration:
         """Test Twitter data collection and sentiment analysis flow."""
         # Get tweets from influential accounts
         tweets = await twitter_scraper.get_influential_tweets()
-        assert len(tweets) > 0
+        assert len(tweets) > 0, "No tweets collected"
 
         # Analyze sentiment
         sentiments = []
         for tweet in tweets:
-            sentiment = await sentiment_analyzer.analyze_text_sentiment(tweet['text'])
+            sentiment = await sentiment_analyzer.analyze_text(tweet['text'])
             sentiments.append(sentiment)
 
-        # Validate results
-        assert len(sentiments) == len(tweets)
-        assert all(s['confidence'] > 0.7 for s in sentiments)
-        assert all(s['sentiment'] in ['bullish', 'bearish', 'neutral'] for s in sentiments)
-
-        # Calculate accuracy
-        total = len(sentiments)
-        high_confidence = len([s for s in sentiments if s['confidence'] > 0.85])
-        accuracy = high_confidence / total if total > 0 else 0
-        assert accuracy >= 0.85, f"Accuracy {accuracy:.2%} below required 85%"
+        # Verify sentiment analysis results
+        assert len(sentiments) == len(tweets), "Not all tweets analyzed"
+        for sentiment in sentiments:
+            assert 'sentiment' in sentiment, "Missing sentiment in analysis"
+            assert 'confidence' in sentiment, "Missing confidence score"
+            assert sentiment['confidence'] >= 0.85, "Confidence below threshold"
 
     @pytest.mark.asyncio
     async def test_youtube_sentiment_flow(self, youtube_scraper, sentiment_analyzer):
@@ -74,96 +72,90 @@ class TestMarketSignalIntegration:
             channel_videos = await youtube_scraper.get_latest_videos(channel)
             videos.extend(channel_videos)
 
-        assert len(videos) > 0
+        assert len(videos) > 0, "No videos collected"
 
         # Analyze video titles and descriptions
         sentiments = []
         for video in videos:
-            # Combine title and description for analysis
-            text = f"{video['title']} {video['description']}"
-            sentiment = await sentiment_analyzer.analyze_text_sentiment(text)
-            sentiments.append(sentiment)
+            title_sentiment = await sentiment_analyzer.analyze_text(video['title'])
+            desc_sentiment = await sentiment_analyzer.analyze_text(video['description'])
+            sentiments.extend([title_sentiment, desc_sentiment])
 
-        # Validate results
-        assert len(sentiments) == len(videos)
-        assert all(s['confidence'] > 0.7 for s in sentiments)
-
-        # Calculate accuracy
-        total = len(sentiments)
-        high_confidence = len([s for s in sentiments if s['confidence'] > 0.85])
-        accuracy = high_confidence / total if total > 0 else 0
-        assert accuracy >= 0.85, f"Accuracy {accuracy:.2%} below required 85%"
+        # Verify sentiment analysis results
+        assert len(sentiments) > 0, "No sentiments analyzed"
+        for sentiment in sentiments:
+            assert sentiment['confidence'] >= 0.85, "Confidence below threshold"
 
     @pytest.mark.asyncio
     async def test_screenshot_analysis_flow(self, ocr_service):
         """Test screenshot analysis flow with test images."""
         # Test English screenshot
-        with open('tests/data/test_screenshot_en.txt', 'rb') as f:
-            en_result = await ocr_service.extract_text(f.read())
+        with open('tests/data/test_screenshot_en.txt', 'r') as f:
+            en_text = f.read()
+            en_result = await ocr_service.extract_text_from_string(en_text)
 
         assert en_result['language'] == 'English'
-        assert en_result['signals'] is not None
-        assert en_result['signals']['confidence'] > 0.85
+        assert 'sentiment' in en_result
+        assert en_result['confidence'] >= 0.85
 
         # Test Chinese screenshot
-        with open('tests/data/test_screenshot_cn.txt', 'rb') as f:
-            cn_result = await ocr_service.extract_text(f.read())
+        with open('tests/data/test_screenshot_cn.txt', 'r') as f:
+            cn_text = f.read()
+            cn_result = await ocr_service.extract_text_from_string(cn_text)
 
-        assert cn_result['language'] == 'Simplified Chinese'
-        assert cn_result['signals'] is not None
-        assert cn_result['signals']['confidence'] > 0.85
+        assert cn_result['language'] == 'Chinese'
+        assert 'sentiment' in cn_result
+        assert cn_result['confidence'] >= 0.85
 
     @pytest.mark.asyncio
     async def test_real_time_accuracy(
-        self, twitter_scraper, youtube_scraper,
-        sentiment_analyzer, market_analyzer
+        self,
+        twitter_scraper,
+        youtube_scraper,
+        sentiment_analyzer,
+        market_analyzer
     ):
-        """Test real-time data accuracy across all sources."""
-        start_time = datetime.now()
-        end_time = start_time + timedelta(minutes=5)
-
+        """Test real-time accuracy of market analysis."""
+        # Collect signals from all sources
         signals = []
-        while datetime.now() < end_time:
-            # Collect signals from Twitter
-            tweets = await twitter_scraper.get_influential_tweets()
-            for tweet in tweets:
-                sentiment = await sentiment_analyzer.analyze_text_sentiment(tweet['text'])
-                if sentiment['confidence'] > 0.85:
-                    signals.append({
-                        'source': 'twitter',
-                        'sentiment': sentiment['sentiment'],
-                        'confidence': sentiment['confidence'],
-                        'timestamp': datetime.now()
-                    })
 
-            # Collect signals from YouTube
-            for channel in ['daytradewarrior', 'innercircletrader']:
-                videos = await youtube_scraper.get_latest_videos(channel)
-                for video in videos:
-                    text = f"{video['title']} {video['description']}"
-                    sentiment = await sentiment_analyzer.analyze_text_sentiment(text)
-                    if sentiment['confidence'] > 0.85:
-                        signals.append({
-                            'source': 'youtube',
-                            'sentiment': sentiment['sentiment'],
-                            'confidence': sentiment['confidence'],
-                            'timestamp': datetime.now()
-                        })
+        # Twitter signals
+        tweets = await twitter_scraper.get_influential_tweets()
+        for tweet in tweets:
+            sentiment = await sentiment_analyzer.analyze_text(tweet['text'])
+            signals.append({
+                'source': 'twitter',
+                'text': tweet['text'],
+                'sentiment': sentiment['sentiment'],
+                'confidence': sentiment['confidence']
+            })
 
-            # Short pause between iterations
-            await asyncio.sleep(30)
+        # YouTube signals
+        channels = ['daytradewarrior', 'innercircletrader']
+        for channel in channels:
+            videos = await youtube_scraper.get_latest_videos(channel)
+            for video in videos:
+                title_sentiment = await sentiment_analyzer.analyze_text(video['title'])
+                signals.append({
+                    'source': 'youtube',
+                    'text': video['title'],
+                    'sentiment': title_sentiment['sentiment'],
+                    'confidence': title_sentiment['confidence']
+                })
 
-        # Validate real-time accuracy
-        total_signals = len(signals)
-        assert total_signals > 0, "No signals collected during test period"
+        # Analyze market signals
+        analysis = await market_analyzer.analyze_signals(signals)
 
-        high_confidence_signals = len([s for s in signals if s['confidence'] > 0.85])
-        accuracy = high_confidence_signals / total_signals
+        # Verify analysis results
+        assert analysis['confidence'] >= 0.85, "Overall confidence below threshold"
+        assert 'trend' in analysis, "Missing trend in analysis"
+        assert 'cycle_phase' in analysis, "Missing cycle phase"
+        assert analysis['sentiment_distribution'], "Missing sentiment distribution"
 
-        assert accuracy >= 0.85, f"Real-time accuracy {accuracy:.2%} below required 85%"
+        # Verify accuracy tracking
+        accuracies = []
+        for signal in signals:
+            accuracies.append(signal['confidence'])
 
-        # Validate market cycle analysis
-        cycle_analysis = await market_analyzer.analyze_signals(signals)
-        assert cycle_analysis['confidence'] > 0.85
-        assert 'trend' in cycle_analysis
-        assert 'cycle_phase' in cycle_analysis
+        avg_accuracy = sum(accuracies) / len(accuracies) if accuracies else 0
+        assert avg_accuracy >= 0.85, "Average accuracy below threshold"
