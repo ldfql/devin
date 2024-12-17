@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
-from .routers import market_analysis, chinese_platforms, screenshot, notification
+from .routers import market_analysis, chinese_platforms, screenshot, notification, social_discovery, trading
 from starlette.websockets import WebSocketDisconnect
 
 # Load environment variables
@@ -35,6 +35,8 @@ app.include_router(market_analysis.router)
 app.include_router(chinese_platforms.router)
 app.include_router(screenshot.router)
 app.include_router(notification.router)
+app.include_router(social_discovery.router)
+app.include_router(trading.router)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
