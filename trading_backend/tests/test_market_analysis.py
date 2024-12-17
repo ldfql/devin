@@ -18,8 +18,8 @@ async def mock_binance_client():
         mock_client.return_value.get_klines.return_value = []
         yield mock_client.return_value
 
-@pytest_asyncio.fixture(scope="function")
-async def market_analyzer(mock_binance_client):
+@pytest.fixture(scope="function")
+def market_analyzer(mock_binance_client):
     """Create a market analyzer instance with mocked client for testing."""
     with patch('xgboost.XGBClassifier') as mock_xgb:
         mock_model = Mock()
@@ -50,17 +50,15 @@ def sample_market_data():
 @pytest.mark.asyncio
 async def test_market_prediction_confidence(market_analyzer, sample_market_data):
     """Test that market predictions meet confidence threshold."""
-    analyzer = await market_analyzer
-    with patch.object(analyzer.model, 'predict_proba') as mock_predict:
+    with patch.object(market_analyzer.model, 'predict_proba') as mock_predict:
         mock_predict.return_value = np.array([[0.1, 0.9]])  # 90% confidence
-        prediction = await analyzer.predict_market_direction(sample_market_data)
+        prediction = await market_analyzer.predict_market_direction(sample_market_data)
         assert prediction['confidence'] >= 0.85, "Bullish predictions must meet confidence threshold"
         assert prediction['is_bullish'] is True, "Should be bullish with high confidence"
 
 @pytest.mark.asyncio
 async def test_position_sizing(market_analyzer, sample_market_data):
     """Test position sizing logic."""
-    analyzer = await market_analyzer
     test_balances = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000]
 
     market_data = {
@@ -71,7 +69,7 @@ async def test_position_sizing(market_analyzer, sample_market_data):
     }
 
     for balance in test_balances:
-        position_info = analyzer.calculate_position_size(
+        position_info = market_analyzer.calculate_position_size(
             account_balance=balance,
             risk_level=0.8,
             market_data=market_data
@@ -90,14 +88,13 @@ async def test_position_sizing(market_analyzer, sample_market_data):
 @pytest.mark.asyncio
 async def test_bull_market_bias(market_analyzer, sample_market_data):
     """Test bull market bias until May 2024."""
-    analyzer = await market_analyzer
     # Test current period (before May 2024)
     current_data = sample_market_data.copy()
     current_data.index = pd.date_range(start='2024-02-01', periods=30, freq='D')
 
-    with patch.object(analyzer.model, 'predict_proba') as mock_predict:
+    with patch.object(market_analyzer.model, 'predict_proba') as mock_predict:
         mock_predict.return_value = np.array([[0.1, 0.75]])  # 75% base confidence
-        prediction = await analyzer.predict_market_direction(current_data)
+        prediction = await market_analyzer.predict_market_direction(current_data)
         assert prediction['is_bull_period'], "Should be in bull period before May 2024"
         assert prediction['confidence'] > 0.85, "Confidence should be boosted during bull period"
 
@@ -105,17 +102,16 @@ async def test_bull_market_bias(market_analyzer, sample_market_data):
     future_data = sample_market_data.copy()
     future_data.index = pd.date_range(start='2024-06-01', periods=30, freq='D')
 
-    with patch.object(analyzer.model, 'predict_proba') as mock_predict:
+    with patch.object(market_analyzer.model, 'predict_proba') as mock_predict:
         mock_predict.return_value = np.array([[0.1, 0.75]])  # 75% base confidence
-        prediction = await analyzer.predict_market_direction(future_data)
+        prediction = await market_analyzer.predict_market_direction(future_data)
         assert not prediction['is_bull_period'], "Should not be in bull period after May 2024"
         assert prediction['confidence'] <= 0.85, "Confidence should not be boosted after bull period"
 
 @pytest.mark.asyncio
 async def test_technical_indicators(market_analyzer, sample_market_data):
     """Test technical indicator calculations."""
-    analyzer = await market_analyzer
-    features = analyzer.calculate_technical_features(sample_market_data)
+    features = market_analyzer.calculate_technical_features(sample_market_data)
 
     assert 'rsi' in features.columns, "RSI should be calculated"
     assert 'macd' in features.columns, "MACD should be calculated"
