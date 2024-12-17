@@ -30,10 +30,11 @@ class MarketCycleAnalyzer:
         # Calculate RSI
         features['rsi'] = ta.rsi(df['close'], length=14)
 
-        # Calculate MACD
-        macd = ta.macd(df['close'])
-        features['macd'] = macd['MACD_12_26_9']
-        features['macd_signal'] = macd['MACDs_12_26_9']
+        # Calculate MACD with explicit column names
+        macd_result = ta.macd(df['close'])
+        features['macd'] = macd_result['MACD_12_26_9']
+        features['macd_signal'] = macd_result['MACDs_12_26_9']
+        features['macd_hist'] = macd_result['MACDh_12_26_9']
 
         # Calculate volatility (ATR)
         atr = ta.atr(df['high'], df['low'], df['close'], length=14)
