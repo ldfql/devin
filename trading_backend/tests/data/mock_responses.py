@@ -78,13 +78,16 @@ MOCK_MARKET_DATA = {
     ]
 }
 
-def get_mock_twitter_response(endpoint: str) -> Dict:
+def get_mock_twitter_response() -> List[Dict]:
     """Get mock Twitter API response."""
-    return MOCK_TWITTER_RESPONSES.get(endpoint, {})
+    return MOCK_TWITTER_RESPONSES['influential_tweets']
 
-def get_mock_youtube_response(channel: str) -> List[Dict]:
+def get_mock_youtube_response() -> List[Dict]:
     """Get mock YouTube API response."""
-    return MOCK_YOUTUBE_RESPONSES['channel_videos'].get(channel, [])
+    videos = []
+    for channel_videos in MOCK_YOUTUBE_RESPONSES['channel_videos'].values():
+        videos.extend(channel_videos)
+    return videos
 
 def get_mock_market_data(symbol: str, timeframe: str = '5m') -> List[Dict]:
     """Get mock market price data."""
