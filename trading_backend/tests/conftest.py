@@ -5,7 +5,7 @@ from unittest.mock import patch
 from pathlib import Path
 import json
 
-from .data.mock_responses import (
+from tests.data.mock_responses import (
     get_mock_twitter_response,
     get_mock_youtube_response,
     get_mock_market_data
