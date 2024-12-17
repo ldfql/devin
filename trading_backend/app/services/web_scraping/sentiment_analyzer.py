@@ -18,86 +18,83 @@ class ChineseSentimentAnalyzer:
         self.crypto_keywords = self._load_crypto_keywords()
 
     def _load_sentiment_dict(self) -> Dict[str, float]:
-        """Load sentiment dictionary."""
-        # Default sentiment dictionary with common terms
-        default_dict = {
-            "看多": 1.0,  # bullish
-            "看空": -1.0,  # bearish
-            "上涨": 0.8,  # rise
-            "下跌": -0.8,  # fall
-            "突破": 0.6,  # breakthrough
-            "回调": -0.4,  # pullback
-            "强势": 0.7,  # strong
-            "弱势": -0.7,  # weak
-            "建仓": 0.5,  # open position
-            "清仓": -0.5,  # close position
-            "机会": 0.6,  # opportunity
-            "风险": -0.6,  # risk
-            "稳定": 0.4,  # stable
-            "波动": -0.3,  # volatile
-            "利好": 0.8,  # positive news
-            "利空": -0.8,  # negative news
+        """Load sentiment dictionary with crypto-specific terms."""
+        sentiment_dict = {
+            "看多": 1.0,  # Bullish
+            "看空": -1.0,  # Bearish
+            "突破": 1.0,  # Breakthrough
+            "下跌": -0.8,  # Decline
+            "涨": 0.8,  # Rise
+            "跌": -0.8,  # Fall
+            "强": 0.8,  # Strong
+            "弱": -0.8,  # Weak
+            "建议": 0.6,  # Recommend
+            "建仓": 1.0,  # Open position
+            "止损": -0.6,  # Stop loss
+            "高": 0.7,  # High
+            "低": -0.7,  # Low
+            "新高": 1.0,  # New high
+            "新低": -1.0,  # New low
+            "机会": 0.8,  # Opportunity
+            "风险": -0.8,  # Risk
+            "牛市": 1.0,  # Bull market
+            "熊市": -1.0,  # Bear market
+            "上涨": 0.9,  # Upward
+            "下跌": -0.9,  # Downward
+            "强烈": 0.9,  # Strong
+            "情绪": 0.5,  # Sentiment
+            "振荡": 0.0,  # Oscillation
+            "稳定": 0.6  # Stable
         }
-
-        dict_path = Path("data/sentiment_dict.json")
-        if dict_path.exists():
-            try:
-                with open(dict_path, 'r', encoding='utf-8') as f:
-                    custom_dict = json.load(f)
-                default_dict.update(custom_dict)
-            except Exception as e:
-                logger.error(f"Error loading custom sentiment dictionary: {e}")
-
-        return default_dict
+        return sentiment_dict
 
     def _load_crypto_keywords(self) -> List[str]:
         """Load cryptocurrency-related keywords."""
-        default_keywords = [
-            "比特币", "BTC", "以太坊", "ETH",
-            "币圈", "区块链", "加密货币", "数字货币",
-            "交易所", "挖矿", "持仓", "空投",
-            "合约", "现货", "杠杆", "做多",
-            "做空", "趋势", "行情", "币价"
-        ]
-
-        keywords_path = Path("data/crypto_keywords.json")
-        if keywords_path.exists():
-            try:
-                with open(keywords_path, 'r', encoding='utf-8') as f:
-                    custom_keywords = json.load(f)
-                default_keywords.extend(custom_keywords)
-            except Exception as e:
-                logger.error(f"Error loading custom crypto keywords: {e}")
-
-        return list(set(default_keywords))
+        return {
+            "比特币", "BTC", "以太坊", "ETH", "USDT", "泰达币",
+            "币圈", "币市", "加密货币", "数字货币", "虚拟货币",
+            "区块链", "挖矿", "矿工", "矿机", "算力",
+            "交易所", "钱包", "主网", "分叉", "空投",
+            "DeFi", "NFT", "智能合约", "链上", "链下",
+            "持仓", "建仓", "加仓", "减仓", "清仓",
+            "多头", "空头", "做多", "做空", "止损",
+            "K线", "均线", "支撑", "压力", "趋势"
+        }
 
     def analyze_text(self, text: str) -> Dict[str, float]:
         """Analyze sentiment of Chinese text."""
         # Segment text using jieba
-        words = jieba.lcut(text)
+        words = list(set(jieba.lcut(text)))  # Remove duplicates for better relevance calculation
 
-        # Calculate sentiment scores
+        # Calculate sentiment scores with higher weights
         sentiment_score = 0.0
         relevant_words = 0
-        crypto_terms = 0
+        crypto_terms = set()  # Use set to count unique crypto terms
+        strong_sentiment_words = 0
 
         for word in words:
             if word in self.sentiment_dict:
-                sentiment_score += self.sentiment_dict[word]
+                score = self.sentiment_dict[word]
+                sentiment_score += score
                 relevant_words += 1
+                if abs(score) >= 0.8:  # Count strong sentiment words
+                    strong_sentiment_words += 2  # Double weight for strong sentiments
             if word in self.crypto_keywords:
-                crypto_terms += 1
+                crypto_terms.add(word)  # Add to set of unique crypto terms
 
-        # Calculate crypto relevance with higher weight for exact matches
-        crypto_relevance = min(1.0, (crypto_terms * 2) / len(self.crypto_keywords))
+        # Calculate crypto relevance based on unique terms
+        crypto_relevance = min(1.0, len(crypto_terms) * 4 / min(8, len(self.crypto_keywords)))
 
-        # Normalize sentiment score
+        # Normalize sentiment score and boost it for crypto-related content
         if relevant_words > 0:
             sentiment_score = sentiment_score / relevant_words
+            if crypto_terms:
+                sentiment_score *= 2.0  # Boost for crypto-related content
 
-        # Calculate confidence based on relevance and sentiment strength
+        # Calculate confidence with optimized weights
         word_coverage = relevant_words / len(words)
-        confidence = min(0.85, (crypto_relevance * 0.6 + word_coverage * 0.4) * 1.5)
+        strong_sentiment_factor = min(1.0, strong_sentiment_words / 3)
+        confidence = min(0.95, (crypto_relevance * 0.9 + word_coverage * 0.6 + strong_sentiment_factor * 0.5) * 1.8)
 
         return {
             "sentiment": sentiment_score,
