@@ -1,0 +1,7 @@
+BTC/USDT Chart Analysis
+Pattern: Double Top
+First Peak: 48000 (2024-01-15 10:00)
+Second Peak: 47900 (2024-01-15 14:00)
+Neckline: 46500
+Volume: Declining on second peak
+Confidence: 95%

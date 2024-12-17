@@ -1,8 +1,8 @@
 import pytest
 import asyncio
 from pathlib import Path
-from ..app.services.ocr.signal_extractor import SignalExtractor
-from ..app.services.ocr.ocr_service import OCRService
+from app.services.ocr.signal_extractor import SignalExtractor
+from app.services.ocr.ocr_service import OCRService
 
 @pytest.fixture
 async def signal_extractor():

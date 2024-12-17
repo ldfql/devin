@@ -1,0 +1,7 @@
+BTC/USDT Chart Analysis
+Pattern: Double Bottom
+First Trough: 42000 (2024-01-15 10:00)
+Second Trough: 42100 (2024-01-15 14:00)
+Neckline: 43500
+Volume: Increasing on second trough
+Confidence: 92%

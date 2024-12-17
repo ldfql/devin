@@ -1,8 +1,8 @@
 import pytest
 import asyncio
-from ..app.services.web_scraping.twitter_scraper import TwitterScraper
-from ..app.services.web_scraping.youtube_scraper import YouTubeScraper
-from ..app.services.web_scraping.account_discovery import AccountDiscoveryService
+from app.services.web_scraping.twitter_scraper import TwitterScraper
+from app.services.web_scraping.youtube_scraper import YouTubeScraper
+from app.services.web_scraping.account_discovery import AccountDiscoveryService
 
 @pytest.fixture
 async def twitter_scraper():

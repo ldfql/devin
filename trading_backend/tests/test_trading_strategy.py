@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime
-from ..app.services.trading_strategy.strategy import TradingStrategy
-from ..app.services.market_analysis.market_cycle import MarketCycleAnalyzer
+from app.services.trading_strategy.strategy import TradingStrategy
+from app.services.market_analysis.market_cycle import MarketCycleAnalyzer
 
 @pytest.fixture
 async def trading_strategy():

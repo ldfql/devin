@@ -1,0 +1,16 @@
+BTC/USDT Complex Pattern Analysis
+Primary Pattern: Head and Shoulders
+Secondary Pattern: Rising Wedge
+Time Frame: 4H
+Volume Profile: Declining
+RSI: Overbought (75)
+MACD: Bearish Crossover
+Fibonacci Levels:
+- 0.618: 45500
+- 0.5: 45000
+- 0.382: 44500
+Support/Resistance:
+- Major Resistance: 46000
+- Major Support: 44000
+Pattern Completion: 95%
+Overall Confidence: 91%

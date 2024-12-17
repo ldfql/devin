@@ -1,0 +1,22 @@
+BTC/USDT Mixed Language Analysis
+英文分析：Head and Shoulders pattern forming
+中文分析：头肩顶形态形成
+
+Technical Details 技术细节：
+Entry 入场: 45000
+Stop Loss 止损: 44500
+Take Profit 止盈: 46000
+
+Pattern Confidence 形态置信度: 93%
+Volume Analysis 成交量分析:
+- Declining on right shoulder 右肩成交量递减
+- Confirms bearish bias 确认看跌偏向
+
+Risk Management 风险管理:
+Position Size 仓位: 2%
+Leverage 杠杆: 2x
+R:R 风险收益比: 1:2
+
+Market Context 市场环境:
+Trend 趋势: Bearish 看跌
+Volatility 波动性: Moderate 中等

@@ -3,9 +3,9 @@ import asyncio
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
-from ..app.services.market_analysis.market_cycle import MarketCycleAnalyzer
-from ..app.services.web_scraping.english_sentiment import EnglishSentimentAnalyzer
-from ..app.services.web_scraping.chinese_scraper import ChineseSentimentAnalyzer
+from app.services.market_analysis.market_cycle import MarketCycleAnalyzer
+from app.services.web_scraping.english_sentiment import EnglishSentimentAnalyzer
+from app.services.web_scraping.chinese_scraper import ChineseSentimentAnalyzer
 
 @pytest.fixture
 async def market_analyzer():

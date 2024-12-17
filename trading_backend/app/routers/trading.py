@@ -1,4 +1,3 @@
-```python
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Optional
 from pydantic import BaseModel
@@ -93,4 +92,3 @@ async def get_short_term_analysis(
         return analysis
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-```
