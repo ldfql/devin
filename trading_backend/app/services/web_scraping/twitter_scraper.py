@@ -31,20 +31,9 @@ class TwitterScraper(BaseEnglishScraper):
         "BitcoinMagazine",
     ]
 
-    def __init__(self):
-        """Initialize Twitter scraper with rate limiting."""
+    def __init__(self, api_key: str, api_secret: str, access_token: str, access_token_secret: str):
+        """Initialize Twitter scraper with API credentials."""
         super().__init__(platform="twitter")
-        self.client = None
-        self.account_discovery = AccountDiscoveryService()
-        self.rate_limits = {
-            'tweets': {'window': 900, 'calls': 0, 'max_calls': 180},  # 180 requests per 15-min window
-            'users': {'window': 900, 'calls': 0, 'max_calls': 100},   # 100 requests per 15-min window
-            'search': {'window': 900, 'calls': 0, 'max_calls': 180}   # 180 requests per 15-min window
-        }
-        self.last_reset = {k: datetime.now() for k in self.rate_limits}
-
-    async def initialize(self, api_key: str, api_secret: str, access_token: str, access_token_secret: str) -> None:
-        """Initialize Twitter API v2 client with credentials."""
         try:
             self.client = AsyncClient(
                 consumer_key=api_key,
@@ -53,7 +42,13 @@ class TwitterScraper(BaseEnglishScraper):
                 access_token_secret=access_token_secret,
                 wait_on_rate_limit=True
             )
-            await self.account_discovery.initialize()
+            self.account_discovery = AccountDiscoveryService()
+            self.rate_limits = {
+                'tweets': {'window': 900, 'calls': 0, 'max_calls': 180},  # 180 requests per 15-min window
+                'users': {'window': 900, 'calls': 0, 'max_calls': 100},   # 100 requests per 15-min window
+                'search': {'window': 900, 'calls': 0, 'max_calls': 180}   # 180 requests per 15-min window
+            }
+            self.last_reset = {k: datetime.now() for k in self.rate_limits}
             logger.info("Twitter scraper initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing Twitter client: {str(e)}")

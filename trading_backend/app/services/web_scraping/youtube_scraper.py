@@ -19,25 +19,16 @@ class YouTubeScraper(BaseEnglishScraper):
         "trading setup", "market structure", "risk management"
     ]
 
-    def __init__(self):
-        """Initialize YouTube scraper with API client."""
+    def __init__(self, api_key: str):
+        """Initialize YouTube scraper with API credentials."""
         super().__init__("youtube")
-        self.youtube = None
-        self._initialize_client()
-
-    def _initialize_client(self) -> None:
-        """Initialize YouTube API client."""
         try:
-            api_key = os.getenv("YOUTUBE_API_KEY")
-            if not api_key:
-                logger.error("YouTube API key not found in environment variables")
-                raise ValueError("YouTube API key not configured")
-
             self.youtube = build(
                 "youtube", "v3",
                 developerKey=api_key,
                 cache_discovery=False
             )
+            logger.info("YouTube scraper initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize YouTube client: {e}")
             raise

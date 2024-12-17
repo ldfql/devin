@@ -19,7 +19,7 @@ class OCRService:
         """Initialize OCR service with language support."""
         self.supported_languages = {
             'eng': 'English',
-            'chi_sim': 'Simplified Chinese'
+            'chi_sim': 'Chinese'
         }
         # Configure Tesseract
         if os.name == 'nt':  # Windows
