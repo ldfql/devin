@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
-from .routers import market_analysis, chinese_platforms
+from .routers import market_analysis, chinese_platforms, screenshot
 
 # Load environment variables
 load_dotenv()
@@ -32,6 +32,7 @@ if not os.getenv("BINANCE_API_KEY") or not os.getenv("BINANCE_API_SECRET"):
 # Include routers
 app.include_router(market_analysis.router)
 app.include_router(chinese_platforms.router)
+app.include_router(screenshot.router, prefix="/screenshot", tags=["screenshot"])
 
 @app.get("/")
 async def root():
