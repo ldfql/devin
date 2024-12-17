@@ -62,6 +62,8 @@ class BasePlatformScraper:
         # If no cache or cache error, fetch fresh data
         logger.debug(f"No cache found for {platform}/{endpoint}, fetching fresh data")
         try:
+            # Always enforce rate limit, even if the request fails
+            await self._rate_limit_wait()
             data = await fetch_func()
             # Cache the result
             cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -175,14 +177,17 @@ class ChinesePlatformScraper:
                 except (json.JSONDecodeError, FileNotFoundError) as e:
                     logger.error(f"Cache error for market sentiment {symbol}: {str(e)}")
 
-            # If no cache or invalid cache, enforce rate limiting and fetch fresh data
+            # Always enforce rate limit before making requests
             await self._enforce_rate_limit()
 
             async with self._cache_lock:
+                # Create tasks but don't await them yet
                 tasks = [
                     self.xiaohongshu.get_crypto_posts(symbol),
                     self.douyin.get_crypto_posts(symbol)
                 ]
+
+                # Now await all tasks together
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
                 response = {

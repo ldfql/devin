@@ -48,3 +48,8 @@ async def get_market_sentiment(symbol: str) -> Dict:
             status_code=500,
             detail=f"Error analyzing market sentiment: {str(e)}"
         )
+
+@router.get("/supported-platforms")
+async def get_supported_platforms():
+    """Get list of supported Chinese platforms."""
+    return {"platforms": scraper.supported_platforms}

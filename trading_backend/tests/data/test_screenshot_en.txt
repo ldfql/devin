@@ -1,0 +1,7 @@
+Test Screenshot
+This is a test screenshot with trading information:
+BTC Price: 45000 USDT
+Signal: BUY
+Stop Loss: 44000
+Target: 48000
+Confidence: 85%

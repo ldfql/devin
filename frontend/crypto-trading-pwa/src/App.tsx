@@ -1,34 +1,57 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect } from 'react'
+import { ScreenshotUpload } from './components/ScreenshotUpload'
+import { NotificationPreferences } from './components/NotificationPreferences'
+import { MonitoringPanel } from './components/MonitoringPanel'
+import { useWebSocket } from './services/websocket'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { connect, disconnect, connected } = useWebSocket()
+
+  useEffect(() => {
+    connect()
+    return () => disconnect()
+  }, [connect, disconnect])
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <header className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Crypto Trading Monitor</h1>
+          <p className="mt-2 text-gray-600">
+            Real-time cryptocurrency trading monitoring and prediction system
+          </p>
+          <div className="mt-2">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+              {connected ? 'Connected' : 'Disconnected'}
+            </span>
+          </div>
+        </header>
+
+        <main className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <section>
+              <h2 className="text-xl font-semibold mb-4">Market Monitor</h2>
+              <MonitoringPanel />
+            </section>
+          </div>
+
+          <div className="lg:col-span-4 space-y-8">
+            <section>
+              <h2 className="text-xl font-semibold mb-4">Screenshot Analysis</h2>
+              <ScreenshotUpload />
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-4">Notification Settings</h2>
+              <NotificationPreferences />
+            </section>
+          </div>
+        </main>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
   )
 }
 

@@ -1,41 +1,33 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict, Any, List
-import os
+from typing import Dict, Any
+from pydantic import BaseModel
 from ..services.market_analysis.market_cycle import MarketCycleAnalyzer
 from ..services.market_analysis.exceptions import MarketAnalysisError
+import os
 
 router = APIRouter(
     prefix="/api/market-analysis",
     tags=["market-analysis"]
 )
 
+class PositionSizeRequest(BaseModel):
+    account_balance: float
+    risk_level: float
+    market_data: Dict[str, Any]
+
 async def get_market_analyzer() -> MarketCycleAnalyzer:
     """Dependency to get market analyzer instance."""
-    api_key = os.getenv("BINANCE_API_KEY")
-    api_secret = os.getenv("BINANCE_API_SECRET")
-
-    if not api_key or not api_secret:
-        raise HTTPException(
-            status_code=500,
-            detail="Binance API configuration missing"
-        )
-
-    return MarketCycleAnalyzer(api_key, api_secret)
+    api_key = os.getenv("BINANCE_API_KEY", "test_key")
+    api_secret = os.getenv("BINANCE_API_SECRET", "test_secret")
+    try:
+        analyzer = MarketCycleAnalyzer(api_key, api_secret)
+        return analyzer
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to initialize market analyzer: {str(e)}")
 
 @router.get("/analyze/{symbol}")
-async def analyze_market(
-    symbol: str,
-    analyzer: MarketCycleAnalyzer = Depends(get_market_analyzer)
-) -> Dict[str, Any]:
-    """
-    Analyze market conditions for a given symbol.
-
-    Parameters:
-    - symbol: Trading pair symbol (e.g., 'BTCUSDT')
-
-    Returns:
-    - Market analysis including prediction, position sizing, and technical indicators
-    """
+async def analyze_market(symbol: str, analyzer: MarketCycleAnalyzer = Depends(get_market_analyzer)):
+    """Analyze market conditions for a given symbol."""
     try:
         return await analyzer.analyze_market(symbol)
     except MarketAnalysisError as e:
@@ -43,16 +35,19 @@ async def analyze_market(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/supported-pairs")
-async def get_supported_pairs(
+@router.post("/position-size")
+async def calculate_position_size(
+    request: PositionSizeRequest,
     analyzer: MarketCycleAnalyzer = Depends(get_market_analyzer)
-) -> List[str]:
-    """Get list of supported trading pairs."""
+):
+    """Calculate position size based on account balance and market conditions."""
     try:
-        # Focus on major pairs initially
-        return [
-            "BTCUSDT", "ETHUSDT", "BNBUSDT", "XRPUSDT",
-            "ADAUSDT", "DOGEUSDT", "MATICUSDT", "SOLUSDT"
-        ]
+        return analyzer.calculate_position_size(
+            request.account_balance,
+            request.risk_level,
+            request.market_data
+        )
+    except MarketAnalysisError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

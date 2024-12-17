@@ -4,7 +4,7 @@ from typing import Dict
 
 from ..services.ocr.ocr_service import OCRService
 
-router = APIRouter()
+router = APIRouter(prefix="/api/screenshot", tags=["screenshot"])
 ocr_service = OCRService()
 
 @router.post("/analyze")
