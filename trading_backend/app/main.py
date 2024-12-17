@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
+from .routers import market_analysis
 
 # Load environment variables
 load_dotenv()
@@ -27,6 +28,9 @@ if not os.getenv("BINANCE_API_KEY") or not os.getenv("BINANCE_API_SECRET"):
         status_code=500,
         detail="Binance API configuration missing"
     )
+
+# Include routers
+app.include_router(market_analysis.router)
 
 @app.get("/")
 async def root():
