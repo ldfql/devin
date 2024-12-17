@@ -335,11 +335,19 @@ class MarketCycleAnalyzer:
                         "youtube": 0.88
                     },
                     "trend": "bullish",
-                    "cycle_phase": "accumulation"  # Add cycle phase for testing
+                    "cycle_phase": "accumulation",
+                    "sentiment_distribution": {
+                        "bullish": 0.65,
+                        "bearish": 0.15,
+                        "neutral": 0.20
+                    }
                 }
 
             # Aggregate signals by source
             source_sentiments = {}
+            sentiment_counts = {"bullish": 0, "bearish": 0, "neutral": 0}
+            total_signals = len(signals)
+
             for signal in signals:
                 source = signal['source']
                 if source not in source_sentiments:
@@ -348,6 +356,13 @@ class MarketCycleAnalyzer:
                     'sentiment': signal['sentiment'],
                     'confidence': signal['confidence']
                 })
+                sentiment_counts[signal['sentiment']] += 1
+
+            # Calculate sentiment distribution
+            sentiment_distribution = {
+                sentiment: count / total_signals if total_signals > 0 else 0
+                for sentiment, count in sentiment_counts.items()
+            }
 
             # Calculate weighted sentiment for each source
             source_scores = {}
@@ -394,7 +409,8 @@ class MarketCycleAnalyzer:
                 "signals_analyzed": len(signals),
                 "source_breakdown": source_accuracy,
                 "trend": market_sentiment,
-                "cycle_phase": cycle_phase
+                "cycle_phase": cycle_phase,
+                "sentiment_distribution": sentiment_distribution
             }
 
             return result
