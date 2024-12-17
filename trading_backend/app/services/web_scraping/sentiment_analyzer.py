@@ -79,21 +79,25 @@ class ChineseSentimentAnalyzer:
         # Calculate sentiment scores
         sentiment_score = 0.0
         relevant_words = 0
+        crypto_terms = 0
 
         for word in words:
             if word in self.sentiment_dict:
                 sentiment_score += self.sentiment_dict[word]
                 relevant_words += 1
+            if word in self.crypto_keywords:
+                crypto_terms += 1
 
-        # Calculate crypto relevance
-        crypto_relevance = sum(1 for keyword in self.crypto_keywords if keyword in text) / len(self.crypto_keywords)
+        # Calculate crypto relevance with higher weight for exact matches
+        crypto_relevance = min(1.0, (crypto_terms * 2) / len(self.crypto_keywords))
 
         # Normalize sentiment score
         if relevant_words > 0:
             sentiment_score = sentiment_score / relevant_words
 
-        # Calculate confidence based on relevance and word count
-        confidence = min(0.85, (crypto_relevance + (relevant_words / len(words))) / 2)
+        # Calculate confidence based on relevance and sentiment strength
+        word_coverage = relevant_words / len(words)
+        confidence = min(0.85, (crypto_relevance * 0.6 + word_coverage * 0.4) * 1.5)
 
         return {
             "sentiment": sentiment_score,

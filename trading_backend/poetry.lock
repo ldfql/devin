@@ -502,6 +502,16 @@ files = [
 ]
 
 [[package]]
+name = "jieba"
+version = "0.42.1"
+description = "Chinese Words Segmentation Utilities"
+optional = false
+python-versions = "*"
+files = [
+    {file = "jieba-0.42.1.tar.gz", hash = "sha256:055ca12f62674fafed09427f176506079bc135638a14e23e25be909131928db2"},
+]
+
+[[package]]
 name = "joblib"
 version = "1.4.2"
 description = "Lightweight pipelining with Python functions"
@@ -1717,4 +1727,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "8a461d31ebd36d7ea2833ed87c4c5dba810e0b1f4f37aac432899aee71cd2df5"
+content-hash = "8a53f1698bde11e5fd22e946617af9b343d655429ca9aa47861b29107937f4c3"
