@@ -8,6 +8,7 @@ from pathlib import Path
 import json
 import hashlib
 from abc import ABC, abstractmethod
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,16 @@ class BaseEnglishScraper(ABC):
         'youtube': timedelta(seconds=2),
         'twitter': timedelta(seconds=5)
     }
+
+    # Sentiment analysis patterns
+    POSITIVE_PATTERNS = [
+        r'bull(?:ish)?', r'moon', r'pump', r'long', r'buy', r'support',
+        r'break(?:out)?', r'surge', r'gain', r'profit', r'growth'
+    ]
+    NEGATIVE_PATTERNS = [
+        r'bear(?:ish)?', r'dump', r'short', r'sell', r'resistance',
+        r'crash', r'drop', r'loss', r'decline', r'fall'
+    ]
 
     def __init__(self, platform: str):
         """Initialize scraper with platform-specific settings.
@@ -91,6 +102,29 @@ class BaseEnglishScraper(ABC):
 
             self._last_request_time[self.platform] = datetime.now()
 
+    async def analyze_text_sentiment(self, text: str) -> Dict[str, Any]:
+        """Analyze sentiment of English text using pattern matching.
+
+        Args:
+            text: Text to analyze
+
+        Returns:
+            Dictionary containing sentiment score and label
+        """
+        text = text.lower()
+        positive_count = sum(len(re.findall(pattern, text)) for pattern in self.POSITIVE_PATTERNS)
+        negative_count = sum(len(re.findall(pattern, text)) for pattern in self.NEGATIVE_PATTERNS)
+
+        total = positive_count + negative_count
+        if total == 0:
+            return {"sentiment": "neutral", "score": 0.0}
+
+        score = (positive_count - negative_count) / (positive_count + negative_count)
+        return {
+            "sentiment": "bullish" if score > 0.2 else "bearish" if score < -0.2 else "neutral",
+            "score": score
+        }
+
     async def _make_request(
         self,
         url: str,
@@ -130,7 +164,6 @@ class BaseEnglishScraper(ABC):
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
-
 
                 if cache:
                     await self._cache_response(cache_key, data)
