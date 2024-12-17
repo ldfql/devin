@@ -6,6 +6,9 @@ import numpy as np
 import pytesseract
 from PIL import Image
 import logging
+from typing import Dict, Optional
+
+from .signal_extractor import SignalExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +27,9 @@ class OCRService:
 
         # Configure Tesseract parameters
         self.custom_config = r'--oem 1 --psm 3'
+
+        # Initialize signal extractor
+        self.signal_extractor = SignalExtractor()
 
     def preprocess_image(self, image: np.ndarray) -> np.ndarray:
         """Preprocess image for better OCR results."""
@@ -74,8 +80,8 @@ class OCRService:
             return 'chi_sim'
         return 'eng'
 
-    async def extract_text(self, image_bytes: bytes) -> str:
-        """Extract text from image bytes."""
+    async def extract_text(self, image_bytes: bytes) -> Dict:
+        """Extract text and trading signals from image bytes."""
         try:
             # Convert bytes to numpy array
             nparr = np.frombuffer(image_bytes, np.uint8)
@@ -97,8 +103,25 @@ class OCRService:
             ).strip()
 
             logger.info(f"Extracted text: {text}")
-            return text
+
+            # Extract trading signals
+            signals = self.signal_extractor.extract_signals(
+                text,
+                'en' if lang == 'eng' else 'cn'
+            )
+
+            return {
+                'text': text,
+                'language': self.supported_languages[lang],
+                'signals': signals,
+                'confidence_explanation': self.signal_extractor.get_confidence_explanation(signals)
+            }
 
         except Exception as e:
             logger.error(f"Error processing image: {str(e)}")
-            return ""
+            return {
+                'text': "",
+                'language': "Unknown",
+                'signals': None,
+                'confidence_explanation': "Error processing image"
+            }
