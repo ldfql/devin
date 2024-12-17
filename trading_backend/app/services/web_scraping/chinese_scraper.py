@@ -202,3 +202,103 @@ class ChinesePlatformScraper:
         except Exception as e:
             logger.error(f"Error getting market sentiment for {symbol}: {str(e)}")
             return {"xiaohongshu": [], "douyin": []}
+
+class ChineseSentimentAnalyzer:
+    """Analyzer for Chinese platform sentiment."""
+
+    def __init__(self):
+        """Initialize the analyzer."""
+        self.platform_scraper = ChinesePlatformScraper()
+        self._cache_dir = Path("cache/chinese_sentiment")
+        self._cache_dir.mkdir(parents=True, exist_ok=True)
+
+    async def analyze_sentiment(self, text: str) -> Dict[str, float]:
+        """Analyze sentiment of Chinese text."""
+        # Basic sentiment analysis using keyword matching
+        positive_keywords = ["看涨", "利好", "突破", "上升", "增长", "牛市"]
+        negative_keywords = ["看跌", "利空", "下跌", "下降", "减少", "熊市"]
+
+        text = text.lower()
+        positive_count = sum(1 for word in positive_keywords if word in text)
+        negative_count = sum(1 for word in negative_keywords if word in text)
+
+        total = positive_count + negative_count
+        if total == 0:
+            return {"positive": 0.5, "negative": 0.5, "neutral": 1.0}
+
+        positive_score = positive_count / total
+        negative_score = negative_count / total
+        neutral_score = 1.0 - abs(positive_score - negative_score)
+
+        return {
+            "positive": positive_score,
+            "negative": negative_score,
+            "neutral": neutral_score
+        }
+
+    async def get_market_sentiment(self, symbol: str) -> Dict[str, Any]:
+        """Get aggregated market sentiment for a symbol."""
+        try:
+            posts = await self.platform_scraper.get_market_sentiment(symbol)
+
+
+            # Analyze sentiment for each platform's posts
+            sentiments = {
+                platform: [
+                    await self.analyze_sentiment(post.get("content", ""))
+                    for post in platform_posts
+                ]
+                for platform, platform_posts in posts.items()
+            }
+
+            # Calculate average sentiment
+            total_posts = sum(len(platform_posts) for platform_posts in posts.values())
+            if total_posts == 0:
+                return {
+                    "overall_sentiment": "neutral",
+                    "confidence": 0.5,
+                    "platform_breakdown": {},
+                    "post_count": 0
+                }
+
+            # Aggregate sentiments across platforms
+            total_positive = 0
+            total_negative = 0
+            total_neutral = 0
+
+            for platform_sentiments in sentiments.values():
+                for sentiment in platform_sentiments:
+                    total_positive += sentiment["positive"]
+                    total_negative += sentiment["negative"]
+                    total_neutral += sentiment["neutral"]
+
+            avg_positive = total_positive / total_posts
+            avg_negative = total_negative / total_posts
+            avg_neutral = total_neutral / total_posts
+
+            # Determine overall sentiment
+            if avg_neutral > 0.6:
+                overall = "neutral"
+            elif avg_positive > avg_negative:
+                overall = "positive"
+            else:
+                overall = "negative"
+
+            # Calculate confidence based on sentiment strength and post count
+            confidence = (1 - avg_neutral) * min(1.0, total_posts / 20)
+
+            return {
+                "overall_sentiment": overall,
+                "confidence": confidence,
+                "platform_breakdown": sentiments,
+                "post_count": total_posts
+            }
+
+        except Exception as e:
+            logger.error(f"Error analyzing market sentiment: {str(e)}")
+            return {
+                "overall_sentiment": "neutral",
+                "confidence": 0.0,
+                "platform_breakdown": {},
+                "post_count": 0
+            }
